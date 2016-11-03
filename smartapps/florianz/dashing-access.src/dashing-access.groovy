@@ -38,7 +38,7 @@ preferences {
         input "switches", "capability.switch", title: "Which switches?", multiple: true, required: false
         input "temperatures", "capability.temperatureMeasurement", title: "Which temperature sensors?", multiple: true, required: false
         input "humidities", "capability.relativeHumidityMeasurement", title: "Which humidity sensors?", multiple: true, required: false
-        input "baterries", "capability.battery", title: "Which battery sensors?", multiple: true, required: false
+        input "batteries", "capability.battery", title: "Which battery sensors?", multiple: true, required: false
     }
 }
 
