@@ -25,7 +25,7 @@ class Dashing.Stdimmer extends Dashing.ClickableWidget
     set: Batman.Property.defaultAccessor.set
 
   @accessor 'icon-style', ->
-    if @get('state') == 'on' then 'dimmer-icon-on' else 'dimmer-icon-off' 
+    if @get('state') == 'on' then 'dimmer-icon-on' else 'dimmer-icon-off'
 
   plusLevel: ->
     newLevel = parseInt(@get('level'))+10
@@ -48,7 +48,7 @@ class Dashing.Stdimmer extends Dashing.ClickableWidget
   levelUp: ->
     newLevel = @plusLevel()
     $.post '/smartthings/dispatch',
-      deviceType: 'dimmerLevel',
+      deviceType: 'dimmer/level',
       deviceId: @get('device'),
       command: newLevel,
       (data) =>
@@ -58,7 +58,7 @@ class Dashing.Stdimmer extends Dashing.ClickableWidget
   levelDown: ->
     newLevel = @minusLevel()
     $.post '/smartthings/dispatch',
-      deviceType: 'dimmerLevel',
+      deviceType: 'dimmer/level',
       deviceId: @get('device'),
       command: newLevel,
       (data) =>
