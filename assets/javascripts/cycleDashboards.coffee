@@ -98,11 +98,9 @@ hideFunctions = {
 	# }
 
 	fadeOut: {
-		start: {opacity: 1
-    transition: all 0s linear 0s}
-		end: {opacity: 0
-  transition: all 0s linear 0s;}
-
+		start: {opacity: 1}
+		end: {opacity: 0}
+    transition: {all 0s}
 	}
 
 	# explode: {
