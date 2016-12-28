@@ -38,13 +38,13 @@
 #       </ul>
 #     </div>
 #
- 
+
 # Some generic helper functions
 sleep = (timeInSeconds, fn) -> setTimeout fn, timeInSeconds * 1000
 isArray = (obj) -> Object.prototype.toString.call(obj) is '[object Array]'
 isString = (obj) -> Object.prototype.toString.call(obj) is '[object String]';
 isFunction = (obj) -> obj && obj.constructor && obj.call && obj.apply
- 
+
 #### Show/Hide functions.
 #
 # Every member of `showFunctions` and `hideFunctions` must be one of:
@@ -78,12 +78,12 @@ isFunction = (obj) -> obj && obj.constructor && obj.call && obj.apply
 #   each widget.
 # * `done()` - Async callback.  Make sure you call this!
 #
- 
+
 hideFunctions = {
 	# toRight: ($dashboard, widgets, originalLocations) ->
 		# documentWidth = $(document).width()
 		# return {end: (($widget) -> {left: documentWidth, opacity: 0})}
- 
+
 	# shrink: {
 		# start: {
 			# opacity: 1,
@@ -96,12 +96,13 @@ hideFunctions = {
 			# opacity: 0
 		# }
 	# }
- 
+
 	fadeOut: {
 		start: {opacity: 1}
 		end: {opacity: 0}
+    transition: all 0s linear 0s;
 	}
- 
+
 	# explode: {
 		# start: {
 			# opacity: 1
@@ -115,30 +116,30 @@ hideFunctions = {
 		# }
 	# }
 }
- 
+
 # Handy function for reversing simple transitions
 reverseTransition = (obj) ->
 	if isFunction(obj) or obj.transitionFunction?
 		throw new Error("Can't reverse transition")
 	return {start: obj.end, end: obj.start, transition: obj.transition}
- 
+
 showFunctions = {
 	# fromLeft: ($dashboard, widgets, originalLocations) ->
 		# start: (($widget, index) -> {left: "#{-$widget.width() - $dashboard.width()}px", opacity: 0}),
 		# end: (($widget, index) -> originalLocations[index]),
- 
+
 	# fromTop: ($dashboard, widgets, originalLocations) ->
 		# start: (($widget, index) -> {top: "#{-$widget.height() - $dashboard.height()}px", opacity: 0}),
 		# end: (($widget, index) -> return originalLocations[index]),
- 
+
 	# zoom: reverseTransition(hideFunctions.shrink)
- 
+
 	fadeIn: reverseTransition(hideFunctions.fadeOut)
- 
+
 	# implode: reverseTransition(hideFunctions.explode)
- 
+
 }
- 
+
 # Move an element from one place to another using a CSS3 transition.
 #
 # * `elements` - One or more elements to move, in an array.
@@ -158,7 +159,7 @@ moveWithTransition = (elements, {transition, start, end, timeInSeconds, offset},
 	timeInSeconds = timeInSeconds or 0
 	end = end or {}
 	offset = offset or 0
- 
+
 	origTransitions = []
 	moveToStart = () ->
 		for el, index in elements
@@ -166,7 +167,7 @@ moveWithTransition = (elements, {transition, start, end, timeInSeconds, offset},
 			origTransitions[index + offset] = $el.css 'transition'
 			$el.css transition: 'left 0s ease 0s'
 			$el.css(if isFunction start then start($el, index + offset) else start)
- 
+
 	moveToEnd = () ->
 		for el, index in elements
 			$el = $(el)
@@ -175,13 +176,13 @@ moveWithTransition = (elements, {transition, start, end, timeInSeconds, offset},
 		sleep Math.max(0, timeInSeconds), ->
 			$el.css transition: origTransitions[index + offset]
 			done? null
- 
+
 	if start
 		moveToStart()
 		sleep 0, -> moveToEnd()
 	else
 		moveToEnd()
- 
+
 # Runs a function which shows or hides the dashboard.  This function ensures that all the
 # dashboards widgets end up where they started.
 #
@@ -190,10 +191,10 @@ moveWithTransition = (elements, {transition, start, end, timeInSeconds, offset},
 #
 showHideDashboard = (visible, stagger, $dashboard, transitions, done) ->
 	$dashboard = $($dashboard)
- 
+
 	$ul = $dashboard.children('ul')
 	$widgets = $ul.children('li')
- 
+
 	# Record the original location, opacity, other CSS attributes we might want to edit
 	originalLocations = []
 	$widgets.each (index, widget) ->
@@ -207,19 +208,19 @@ showHideDashboard = (visible, stagger, $dashboard, transitions, done) ->
 			transform: $widget.css 'transform'
 			"-webkit-transform": $widget.css '-webkit-transform'
 		}
- 
+
 	widgets = $.makeArray($widgets)
- 
+
 	if isFunction transitions
 		transitions = transitions($dashboard, widgets, originalLocations)
- 
- 
+
+
 	origDone = done
 	done = () ->
 		sleep 0, () ->
 			# Make sure the dashboard is in a sane state.
 			$dashboard.toggle( visible )
- 
+
 			sleep 0, () ->
 				# Clear any styles we've set on the widgets.
 				#
@@ -230,16 +231,16 @@ showHideDashboard = (visible, stagger, $dashboard, transitions, done) ->
 				# everything will work out in the end.
 				#
 				$dashboard.children('ul').children('li').attr 'style', 'position: absolute'
- 
+
 				origDone?()
- 
- 
+
+
 	transitionString = "all 1s"
- 
+
 	if transitions.transitionFunction
 		# Show/hide the dashboard with a custom function
 		transitionFunction = transitions.transitionFunction
- 
+
 	else if !stagger
 		transitionFunction = ($dashboard, {widgets, originalLocations}, fnDone) ->
 			moveWithTransition widgets, {
@@ -252,7 +253,7 @@ showHideDashboard = (visible, stagger, $dashboard, transitions, done) ->
 					transition: transitions.transition or transitionString,
 					timeInSeconds: 1
 				}, fnDone
- 
+
 	else
 		transitionFunction = ($dashboard, {widgets, originalLocations}, fnDone) ->
 			singleWidgetFn = (widget, index) ->
@@ -271,12 +272,12 @@ showHideDashboard = (visible, stagger, $dashboard, transitions, done) ->
 						}, ->
 			for widget, index in widgets
 				singleWidgetFn(widget, index)
- 
+
 			sleep 1.5, fnDone
- 
+
 	# Show or hide the dashboard
 	transitionFunction $dashboard, {stagger, widgets, originalLocations}, done
- 
+
 # Select a member at random from an object.
 #
 # If 'allowedMembers' is an array of strings, then only the corresponding members will be
@@ -293,13 +294,13 @@ pickMember = (object, allowedMembers=null) ->
 	else
 		for memberName, member of object
 			functionArray.push {key: memberName, value: member}
- 
+
 	if functionArray.length > 0
 		index = Math.floor(Math.random()*functionArray.length);
 		answer = functionArray[index]
- 
+
 	return answer
- 
+
 # Cycle the dashboard to the next dashboard.
 #
 # If a transition is already in progress, this function does nothing.
@@ -309,14 +310,14 @@ Dashing.cycleDashboardsNow = do () ->
 	(options = {}) ->
 		return if transitionInProgress
 		transitionInProgress = true
- 
+
 		{stagger, fastTransition, boardnumber, transitiontype} = options
 		stagger = !!stagger
 		fastTransition = !!fastTransition
- 
+
 		$dashboards = $('.gridster')
- 
-		# Work out which dashboard to show		
+
+		# Work out which dashboard to show
 		oldVisibleIndex = visibleIndex
 		if boardnumber?
 			visibleIndex = boardnumber - 1
@@ -328,7 +329,7 @@ Dashing.cycleDashboardsNow = do () ->
 		if oldVisibleIndex == visibleIndex
 			# Only one dashboard.  Disable fast transitions
 			fastTransition = false
- 
+
 		doneCount = 0
 		doneFn = () ->
 			doneCount++
@@ -336,10 +337,10 @@ Dashing.cycleDashboardsNow = do () ->
 			# are finished.
 			if doneCount is 2
 				transitionInProgress = false
- 
+
 		# Hide the old dashboard
 		hideFunction = pickMember hideFunctions
- 
+
 		showNewDashboard = () ->
 			options.onTransition?($($dashboards[visibleIndex]))
 			showFunction = null
@@ -348,31 +349,31 @@ Dashing.cycleDashboardsNow = do () ->
 				showFunction = showFunctions[chainsTo]
 			else if chainsTo?
 				showFunction = {key: "chainsTo", value: chainsTo}
- 
+
 			if !showFunction
 				showFunction = pickMember showFunctions
- 
+
 			# console.log "Showing dashboard #{visibleIndex} #{showFunction.key}"
 			showHideDashboard true, stagger, $dashboards[visibleIndex], showFunction.value, () ->
 				doneFn()
- 
+
 		# console.log "Hiding dashboard #{oldVisibleIndex} #{hideFunction.key}"
 		showHideDashboard false, stagger, $dashboards[oldVisibleIndex], hideFunction.value, () ->
 			if !fastTransition
 				showNewDashboard()
 			doneFn()
- 
+
 		# If fast transitions are enabled, then don't wait for the hiding animation to complete
 		# before showing the new dashboard.
 		if fastTransition then showNewDashboard()
- 
+
 		return null
- 
+
 # Adapted from http://stackoverflow.com/questions/1403888/get-url-parameter-with-javascript-or-jquery
 getURLParameter = (name) ->
 	encodedParameter = (RegExp(name + '=' + '(.+?)(&|$)').exec(location.search)||[null,null])[1]
 	return if encodedParameter? then decodeURI(encodedParameter) else null
- 
+
 # Cause dashing to cycle from one dashboard to the next.
 #
 # Dashboard cycling can be bypassed by passing a "page" parameter in the url.  For example,
@@ -392,30 +393,30 @@ getURLParameter = (name) ->
 #
 Dashing.cycleDashboards = (options) ->
 	timeInSeconds = if options.timeInSeconds? then options.timeInSeconds else 20
- 
+
 	$dashboards = $('.gridster')
- 
+
 	startDashboard = if options.page? then options.page else 1
 	startDashboard = Math.max startDashboard, 1
 	startDashboard = Math.min startDashboard, $dashboards.length
- 
+
 	$dashboards.each (dashboardIndex, dashboard) ->
 		# Hide all but the first dashboard.
 		$(dashboard).toggle(dashboardIndex is (startDashboard - 1))
- 
+
 		# Set all dashboards to position: absolute so they stack one on top of the other
 		$(dashboard).css "position": "absolute"
- 
+
 	# If the user specified a dashboard, then don't cycle from one dashboard to the next.
 	if !startDashboardParam? and (timeInSeconds > 0)
 		cycleFn = () -> Dashing.cycleDashboardsNow(options)
 		setInterval cycleFn, timeInSeconds * 1000
- 
+
 	$(document).keypress (event) ->
 		# Cycle to next dashboard on space
 		if event.keyCode is 32 then Dashing.cycleDashboardsNow(options)
 		return true
- 
+
 # Customized version of `Dashing.gridsterLayout()` which supports multiple dashboards.
 Dashing.cycleGridsterLayout = (positions) ->
 	#positions = positions.replace(/^"|"$/g, '') # ??
@@ -431,7 +432,7 @@ Dashing.cycleGridsterLayout = (positions) ->
 				$(widget).attr('data-col', position[index].col)
 	else
 		console.log "Warning: Could not apply custom layout!"
- 
+
 # Redefine functions for saving layout
 sleep 0.1, () ->
 	Dashing.getWidgetPositions = ->
@@ -439,10 +440,10 @@ sleep 0.1, () ->
 		for dashboard in $(".gridster > ul")
 			dashboardPositions.push $(dashboard).gridster().data('gridster').serialize()
 		return dashboardPositions
- 
+
 	Dashing.showGridsterInstructions = ->
 		newWidgetPositions = Dashing.getWidgetPositions()
- 
+
 		if !isArray(newWidgetPositions[0])
 			$('#save-gridster').slideDown()
 			$('#gridster-code').text("
