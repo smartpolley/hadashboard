@@ -250,7 +250,7 @@ showHideDashboard = (visible, stagger, $dashboard, transitions, done) ->
 					start: transitions.start,
 					end: transitions.end,
 					transition: transitions.transition or transitionString,
-					timeInSeconds: 1
+					timeInSeconds: 0
 				}, fnDone
 
 	else
@@ -266,7 +266,7 @@ showHideDashboard = (visible, stagger, $dashboard, transitions, done) ->
 							start: transitions.start,
 							end: transitions.end,
 							transition: transitions.transition or transitionString,
-							timeInSeconds: 1,
+							timeInSeconds: 0,
 							offset: index
 						}, ->
 			for widget, index in widgets
