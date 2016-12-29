@@ -234,7 +234,7 @@ showHideDashboard = (visible, stagger, $dashboard, transitions, done) ->
 				origDone?()
 
 
-	transitionString = "all 0s"
+	transitionString = "all 0.25s"
 
 	if transitions.transitionFunction
 		# Show/hide the dashboard with a custom function
