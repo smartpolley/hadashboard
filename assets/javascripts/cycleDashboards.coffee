@@ -100,7 +100,6 @@ hideFunctions = {
 	fadeOut: {
 		start: {opacity: 1}
 		end: {opacity: 0}
-    transition: all 0s
 	}
 
 	# explode: {
@@ -235,7 +234,7 @@ showHideDashboard = (visible, stagger, $dashboard, transitions, done) ->
 				origDone?()
 
 
-	transitionString = "all 1s"
+	transitionString = "all 0s"
 
 	if transitions.transitionFunction
 		# Show/hide the dashboard with a custom function
