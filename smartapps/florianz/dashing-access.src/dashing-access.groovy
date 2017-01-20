@@ -38,6 +38,7 @@ preferences {
         input "switches", "capability.switch", title: "Which switches?", multiple: true, required: false
         input "temperatures", "capability.temperatureMeasurement", title: "Which temperature sensors?", multiple: true, required: false
         input "humidities", "capability.relativeHumidityMeasurement", title: "Which humidity sensors?", multiple: true, required: false
+        input "thermostats", "capability.thermostat", title: "Which thermostats?", multiple: true, required: false
         input "batteries", "capability.battery", title: "Which battery sensors?", multiple: true, required: false
     }
 }
@@ -133,6 +134,16 @@ mappings {
             GET: "getBattery"
         ]
     }
+    path("/thermostat") {
+        action: [
+            GET: "getThermostat"
+        ]
+    }
+    path("/thermostatSetpoint") {
+        action: [
+            POST: "thermostatSetpoint"
+        ]
+    }
 }
 
 
@@ -163,6 +174,7 @@ def initialize() {
         "temperature": [:],
         "humidity": [:],
         "battery": [:],
+        "thermostat": [:],
         ]
 
     subscribe(contacts, "contact", contactHandler)
@@ -179,6 +191,8 @@ def initialize() {
     subscribe(temperatures, "temperature", temperatureHandler)
     subscribe(humidities, "humidity", humidityHandler)
     subscribe(batteries, "battery", batteryHandler)
+    subscribe(thermostats, "temperature", thermostatTempHandler)
+    subscribe(thermostats, "thermostatSetpoint", thermostatSetpointHandler)
 }
 
 
@@ -722,6 +736,103 @@ def batteryHandler(evt) {
     notifyWidget(widgetId, ["value": evt.value])
 }
 
+
+//
+// Thermostats
+//
+def getSetpoint(thermostat) {
+    // thermostatSetpoint returns an error (for ecobee) so get cooling or heating setpoint
+	return thermostat.currentThermostatMode == "cool" ? thermostat.currentCoolingSetpoint : thermostat.currentHeatingSetpoint
+}
+
+def setSetpoint(thermostat, temp) {
+	if (thermostat.currentThermostatMode == "cool") {
+		thermostat.setCoolingSetpoint(temp)
+	} else {
+		thermostat.setHeatingSetpoint(temp)
+	}
+}
+
+def getThermostat() {
+    def deviceId = request.JSON?.deviceId
+    log.debug "getThermostat ${deviceId}"
+
+    if (deviceId) {
+        registerWidget("thermostat", deviceId, request.JSON?.widgetId)
+
+        def whichThermostat = thermostats.find { it.displayName == deviceId }
+        if (!whichThermostat) {
+            return respondWithStatus(404, "Device '${deviceId}' not found.")
+        } else {
+            return [
+                "deviceId": deviceId,
+                "temperature": whichThermostat.currentTemperature,
+				"setpoint": getSetpoint(whichThermostat)]
+        }
+    }
+
+    def result = [:]
+    thermostats.each {
+        result[it.displayName] = [
+            "temperature": it.currentTemperature,
+            "setpoint": getSetpoint(it),
+            "widgetId": state.widgets.thermostat[it.displayName]]}
+
+    return result
+}
+
+def postThermostat() {
+    def command = request.JSON?.command
+    def deviceId = request.JSON?.deviceId
+    log.debug "postThermostat ${deviceId}, ${command}"
+
+    if (command && deviceId) {
+        def whichThermostat = thermostats.find { it.displayName == deviceId }
+        if (!whichThermostat) {
+            return respondWithStatus(404, "Device '${deviceId}' not found.")
+        } else {
+            whichThermostat."$command"()
+        }
+    }
+    return respondWithSuccess()
+}
+
+def thermostatSetpoint() {
+    def setpoint = request.JSON?.setpoint
+    def deviceId = request.JSON?.deviceId
+    log.debug "thermostatSetpoint ${deviceId}, ${setpoint}"
+    setpoint = setpoint.toInteger()
+    if (setpoint && deviceId) {
+        def whichThermostat = thermostats.find { it.displayName == deviceId }
+        if (!whichThermostat) {
+            return respondWithStatus(404, "Device '${deviceId}' not found.")
+        } else {
+            setSetpoint(whichThermostat, setpoint)
+        }
+    }
+    return respondWithSuccess()
+}
+
+def thermostatTempHandler(evt) {
+    def widgetId = state.widgets.thermostat[evt.displayName]
+    def value = getFirstNumber(evt.value)
+    if (value != "")
+        notifyWidget(widgetId, ["temperature": value])
+}
+
+def thermostatSetpointHandler(evt) {
+    def widgetId = state.widgets.thermostat[evt.displayName]
+    def value = getFirstNumber(evt.value)
+    if (value != "")
+        notifyWidget(widgetId, ["setpoint": value])
+}
+
+def getFirstNumber(v) {
+    return v.replaceAll("[^0-9.]", "")
+    // regex doesn't work
+    //def m = (v =~ /\D*(\d+).*/)
+    //return m.matches() ? m[0][1] : ""
+}
 
 //
 // Widget Helpers
